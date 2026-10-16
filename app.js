@@ -63,7 +63,21 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 
 // ---------------------------------------------------------------- renderer
 const canvas = $("scene");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+// Some computers (virtual machines, old drivers) have no WebGL. Then the city is not drawn,
+// but the rules, the simulation and the results still work, and the player sees why.
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+} catch (e) {
+  renderer = { shadowMap: {}, setPixelRatio() {}, setSize() {}, render() {}, domElement: canvas, noWebGL: true };
+  const note = document.createElement("div");
+  note.className = "no-webgl";
+  note.textContent = (navigator.language || "").startsWith("ru")
+    ? "На этом компьютере нет 3D (WebGL), поэтому город не нарисован. Правила, симуляция и результат работают как обычно."
+    : "This computer has no 3D support (WebGL), so the city isn't drawn. Rules, the simulation and the results still work.";
+  note.style.cssText = "position:fixed;left:50%;top:50%;transform:translate(-10%,-50%);max-width:420px;padding:16px 18px;border-radius:14px;background:#fffdf7;border:1px solid #e3dccb;font:15px/1.45 system-ui,sans-serif;color:#2b2b2b;z-index:5";
+  document.body.appendChild(note);
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
