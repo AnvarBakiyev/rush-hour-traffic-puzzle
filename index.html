@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-leaderboard-api="">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rush hour: traffic rules puzzle</title>
+<meta name="description" content="A cartoon city stuck in traffic. Write the rules for its traffic lights in a tiny language and get everyone home.">
+<meta property="og:title" content="Rush hour">
+<meta property="og:description" content="A cartoon city stuck in traffic. Write the rules for its traffic lights and get everyone home.">
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/three.module.js",
+  "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js",
+  "three/addons/geometries/RoundedBoxGeometry.js": "./vendor/three/RoundedBoxGeometry.js"
+} }
+</script>
+<style>
+:root{--ink:#1f2a33;--soft:#5b6873;--card:rgba(255,254,250,.88);--line:rgba(31,42,51,.10);--gold:#C57E33;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--ok:#2f8a55;--bad:#c0473a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font:400 15px/1.5 var(--sans);color:var(--ink);background:linear-gradient(180deg,#cfe7f3 0%,#e8f1e2 60%,#e3edd6 100%)}
+button,textarea{font-family:inherit}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.ui{position:fixed;z-index:5}
+.card{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(31,42,51,.10)}
+.panel{left:16px;top:16px;bottom:16px;width:min(380px,calc(100% - 32px));padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.brand a{font-weight:700;font-size:14px;color:var(--ink);text-decoration:none}.brand a b{color:var(--gold)}
+h1{font-size:26px;line-height:1.1;margin:2px 0 4px;letter-spacing:-.01em}
+.sub{margin:0;color:var(--soft);font-size:13.5px}
+.levels{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 11px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip .mini{color:#e8a43a;font-size:11px}.chip.on .mini{color:#ffd36b}
+.story{margin:0;font-size:14px}
+.goals{margin:0;padding-left:18px;font-size:13px;color:var(--soft)}
+.label{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft);display:flex;justify-content:space-between;align-items:center}
+.label button{font:500 12px var(--sans);text-transform:none;letter-spacing:0;border:0;background:none;color:var(--gold);cursor:pointer;padding:0}
+textarea{width:100%;min-height:118px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fffdf8;color:var(--ink);font:400 13px/1.65 var(--mono)}
+textarea:focus{outline:2px solid #f2c14e;outline-offset:1px}
+.help{font-size:12.5px;color:var(--soft);background:rgba(242,193,78,.12);border-radius:10px;padding:8px 10px}
+.help code{font:400 12px var(--mono);color:var(--ink)}
+.problems{font-size:13px;color:var(--bad);background:rgba(192,71,58,.08);border-radius:10px;padding:8px 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.p{background:#3fbf73;border-color:#36ad66;color:#fff;font-size:15px;padding:11px 18px;box-shadow:0 4px 0 #2e9a5a}
+.btn.p:active{transform:translateY(2px);box-shadow:0 2px 0 #2e9a5a}
+.btn[disabled]{opacity:.65;cursor:default}
+.budget{font:600 12px var(--mono);color:var(--ink);text-transform:none;letter-spacing:0}
+.crosses{display:flex;gap:6px;flex-wrap:wrap}
+.cx{width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:#fff;font:700 15px var(--sans);cursor:pointer;display:grid;place-items:center;position:relative;color:var(--ink)}
+.cx small{position:absolute;bottom:2px;font:600 9px var(--mono);color:var(--soft)}
+.cx.light{background:#eafaf0;border-color:#3fbf73}.cx.stop{background:#fff0ee;border-color:#e57565}.cx.main{background:#fff7dc;border-color:#e8b93a}
+.cx.on{box-shadow:0 0 0 3px var(--ink)}
+.cx.jam{animation:jam 1s infinite}
+@keyframes jam{50%{transform:scale(1.08);background:#ffd9d3}}
+.cross-card{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;display:grid;gap:8px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card-head .fine{font-size:12px;color:var(--soft);text-align:right}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opts:empty{display:none}
+.opt{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+.opt.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.opt[disabled]{opacity:.4;cursor:not-allowed}
+.toggle{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+.toggle input{width:18px;height:18px;accent-color:#3fbf73}
+.toggle.amb{background:#fff1f1;border:1px solid #f3c3c3;border-radius:12px;padding:8px 10px;font-weight:600}
+.adv summary{cursor:pointer;font-size:13px;color:var(--soft)}
+.hintText{font-size:13px;background:#fff7dc;border-radius:10px;padding:8px 10px;margin:0}
+.live{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.live div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 8px;text-align:center}
+.live b{display:block;font-size:20px;line-height:1.1}
+.live span{font-size:11px;color:var(--soft)}
+.clock{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.clock i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3fd17a,#f2c14e,#ff7a59);border-radius:99px}
+.result{background:#fffdf3;border:1px solid rgba(242,193,78,.6);border-radius:14px;padding:12px}
+.result h3{margin:0 0 4px;font-size:16px}
+.stars{font-size:30px;letter-spacing:4px;color:#d9d3c4;line-height:1}
+.stars .on{color:#f2b53a;text-shadow:0 2px 0 #d48f17}
+.result p{margin:4px 0 0;font-size:13px}
+.verdict{font-size:13px;margin-top:8px!important;padding:8px 10px;border-radius:10px;background:rgba(63,191,115,.10)}
+.verdict.bad{background:rgba(192,71,58,.08);color:var(--bad)}
+.verdict .mono{font:400 11.5px var(--mono);color:var(--soft);display:block;margin-top:4px}
+table.m{width:100%;border-collapse:collapse;font-size:14px}
+table.m th,table.m td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.m th{font:600 11px var(--mono);color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+table.m td.r{font:400 12px/1.5 var(--mono);color:var(--soft);white-space:pre-wrap}
+table.m .st{color:#f2b53a;letter-spacing:1px}
+table.m button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+.tools{top:16px;right:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.seg{display:inline-flex;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--soft);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--ink);color:#fff}
+.how{inset:0;display:grid;place-items:center;background:rgba(20,30,40,.35);padding:16px}
+.how[hidden]{display:none}
+.how .card{max-width:560px;padding:22px 24px;max-height:calc(100% - 32px);overflow:auto}
+.how h2{margin:0 0 10px}
+.btn.why{background:#fff7dc;border-color:#f2c14e}
+.toast{left:50%;transform:translateX(-50%);bottom:24px;padding:10px 16px;font-size:14px}
+.toast[hidden]{display:none}
+.board-note{font-size:13px;color:var(--soft);margin:8px 0 0}.board-note a,.verdict a{color:var(--gold)}
+a.btn{text-decoration:none;display:inline-block}
+.share-box{width:100%;margin-top:6px;font:400 11.5px var(--mono);border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;color:var(--ink)}
+[hidden]{display:none!important}
+@media (max-width:760px){
+  .panel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:52%;padding:12px;gap:8px}
+  h1{font-size:20px}.sub{display:none}
+  .tools{top:8px;right:8px;left:8px;justify-content:flex-end}
+  textarea{min-height:84px}
+}
+</style>
+<link rel="icon" href="favicon.svg" type="image/svg+xml"></head>
+<body>
+<canvas id="scene" aria-label="city"></canvas>
+
+<aside class="ui card panel" aria-label="rules">
+  <div class="brand"><a href="https://extella.dev/" target="_blank" rel="noopener">ext<b>e</b>lla</a></div>
+  <div><h1 data-i="title">Rush hour</h1><p class="sub" data-i="sub"></p></div>
+  <div class="levels" id="levels"></div>
+  <p class="story" id="story"></p>
+  <div><div class="label"><span data-i="goal">Goals</span></div><ul class="goals" id="goals"></ul></div>
+  <div class="label"><span data-i="city">Your city</span><span id="budget" class="budget"></span></div>
+  <div class="crosses" id="crosses"></div>
+  <div class="cross-card" id="card">
+    <div class="card-head"><b id="cardTitle"></b><span class="fine" id="cardNote"></span></div>
+    <div class="opts" id="typeOpts"></div>
+    <div class="opts" id="planOpts"></div>
+    <div class="opts" id="offsetOpts"></div>
+    <label class="toggle"><input type="checkbox" id="boxToggle"><span data-i="box_label">Box junction: don't drive in if you can't drive out</span></label>
+  </div>
+  <label class="toggle amb" id="ambRow"><input type="checkbox" id="ambToggle"><span data-i="amb_label">Let the ambulance through</span></label>
+  <div class="problems" id="problems" hidden></div>
+  <div class="row">
+    <button class="btn p" type="button" id="runBtn" data-i="run">Start rush hour</button>
+    <button class="btn" type="button" id="hintBtn" data-i="hint">Hint</button>
+    <button class="btn" type="button" id="resetBtn" data-i="reset">As it was</button>
+  </div>
+  <details class="adv" id="adv">
+    <summary data-i="advanced">Rules as text, for the curious</summary>
+    <div class="label" style="margin-top:8px"><span data-i="rules">Rules of the city</span><button type="button" id="helpBtn" data-i="lang_help">How to write rules</button></div>
+    <div class="help" id="help" hidden></div>
+    <textarea id="rules" spellcheck="false" aria-label="rules"></textarea>
+  </details>
+  <p class="hintText" id="hintText" hidden></p>
+  <div class="clock"><i id="clock"></i></div>
+  <div class="live">
+    <div><b id="nDelivered">0</b><span data-i="delivered">home</span></div>
+    <div><b id="nStanding">0</b><span data-i="standing">standing</span></div>
+    <div><b id="nQueue">0</b><span data-i="queue">longest queue</span></div>
+  </div>
+  <div class="result" id="result" hidden>
+    <h3 data-i="result">Rush hour is over</h3>
+    <div class="stars" id="stars"></div>
+    <p id="rLine"></p>
+    <p id="rMore" style="color:var(--soft)"></p>
+    <div class="row" style="margin-top:8px"><button class="btn p" type="button" id="verifyBtn" data-i="verify">Confirm on the server</button><button class="btn" type="button" id="shareBtn" data-i="share">Copy a link to my rules</button></div>
+    <p class="verdict" id="verdict" hidden></p>
+    <p class="board-note" id="boardNote" hidden><span data-i="board_note">Leaderboard:</span> <a href="https://extella.dev/traffic/" target="_blank" rel="noopener">extella.dev/traffic</a></p>
+  </div>
+</aside>
+
+<div class="ui tools">
+  <span class="seg"><button type="button" data-speed="1">1×</button><button type="button" data-speed="3" class="on">3×</button><button type="button" data-speed="6">6×</button></span>
+  <button class="btn" type="button" id="mayorsBtn" data-i="mayors">Best mayors</button>
+  <a class="btn board-link" id="boardLink" href="https://extella.dev/traffic/" target="_blank" rel="noopener" hidden><span data-i="board_link">Leaderboard</span>: extella.dev/traffic</a>
+  <button class="btn why" type="button" id="howBtn" data-i="how">Why this game</button>
+  <span class="seg"><button type="button" data-lang="ru">RU</button><button type="button" data-lang="en">EN</button></span>
+</div>
+
+<div class="ui how" id="how" hidden>
+  <div class="card"><h2 data-i="how">What is this</h2><div id="howBody"></div><button class="btn p" type="button" id="howClose" data-i="close">Close</button></div>
+</div>
+<div class="ui how" id="mayors" hidden>
+  <div class="card" style="max-width:720px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><h2 data-i="mayors">Best mayors</h2><button class="btn" type="button" id="mayorsClose" data-i="close">Close</button></div>
+    <p class="sub" id="mayorsLead" style="display:block;margin-bottom:10px"></p>
+    <div id="mayorsTable"></div>
+  </div>
+</div>
+<div class="ui card toast" id="toast" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
